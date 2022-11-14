@@ -9,3 +9,8 @@ Es dient jediglich der Veranschaulichung der erlernten Fähigkeiten aus dem Wahl
 
 ## Regeln
 Der Code darf zur Inspiration genutzt werden. Eine direkte Kopie ist hier nicht gestattet.
+
+## Voraussetzungen
+- Python 3.x
+- pip
+- pycryptodome (pip install pycryptodome)
