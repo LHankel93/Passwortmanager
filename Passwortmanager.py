@@ -6,6 +6,7 @@ import base64
 import os
 from pathlib import Path
 import sys
+from Crypto.Cipher import XOR
 # Passwort Klasse definieren
 class Passwort():
     def __init__(self, index:int , name:str, passwort:str, url:str, hinweis:str):
@@ -74,6 +75,7 @@ def master_Passwort_pruefen():
     else :
         print("Zugangsdaten sind korrekt.")
 
+
 def einrichtung_pruefen():
     __master_datei = Path("./login.txt")
     __passwort_datei = Path("./passwords.txt")
@@ -129,6 +131,10 @@ def datensatz_aendern(pw_liste, index_aendern:int, datenbank_datei):
     Passwort_Datei_Schreiben(pw_liste, datenbank_datei)
     Datei_Lesen(pw_liste)
         
+def Passwortliste_sortieren(pw_liste):
+    pw_liste.sort(key=lambda x: x.index, reverse=False)
+    return pw_liste
+    
 
 def Datei_Lesen(pw_liste):
     datei = open("./passwords.txt", "r")
@@ -142,6 +148,7 @@ def Datei_Lesen(pw_liste):
             pw_attribute = line.split(":")
             pw = Passwort(pw_attribute[0], pw_attribute[1], pw_attribute[2], pw_attribute[3], pw_attribute[4])
             pw_liste.append(pw)
+    pw_liste = Passwortliste_sortieren(pw_liste)
     datei.close
 
 # Schreiben einer Passwort Datei
@@ -180,7 +187,6 @@ def Ausgabe_Pw_Liste(pw_liste):
         hinweis = Passwort.get_hinweis(i)
         print(str(index) + "\t" + str(name) + "\t\t" + str(passwort) + "\t\t" + str(url) + "\t\t" + str(hinweis))
 
-#TODO: Lücken bei den Indizes füllen.
 def finde_naechsten_index():
     # liste mit allen Indezes anlegen
     index_list = []
@@ -191,13 +197,11 @@ def finde_naechsten_index():
     if not index_list:
         next_index = 1
     else:
-        zwischenspeicher:int = 1
         for z in index_list:
-            if (int(z) - int(zwischenspeicher)) != 1:
-                next_index = zwischenspeicher + 1
-                return next_index
-            zwischenspeicher = z
-        next_index:int = int(index_list[-1]) + 1
+            if (int(z) + 1) not in index_list:
+                next_index:int = (int(z)+1)
+            else:
+                next_index:int = int(index_list[-1]) + 1
     return next_index
 
 
@@ -211,6 +215,7 @@ def neuen_Datensatz_anlegen(pw_liste, datenbank_datei_name):
         hinweis = "/"
     ein_Passwort = Passwort(index, name, passwort, url, hinweis)
     pw_liste.append(ein_Passwort)
+    pw_liste = Passwortliste_sortieren(pw_liste)
     Passwort_Datei_Schreiben(pw_liste, datenbank_datei_name)
     Datei_Lesen(pw_liste)
 
@@ -219,9 +224,10 @@ def auswahl_Menue(pw_liste, datenbank_datei_name):
     print("2) Füge ein neues Passwort hinzu")
     print("3) Lösche ein Passwort")
     print("4) Aktualisiere Passwort")
-    print("5) Beende\n")
+    print("5) Alles Speichern")
+    print("6) Beende\n")
     auswahl:int = 0
-    while auswahl < 1 or auswahl > 5:
+    while auswahl < 1 or auswahl > 6:
         auswahl:int = int(input())
         if auswahl < 1 or auswahl > 5 and auswahl not in [1, 2, 3, 4, 5]:
             print("Keine zulässige Eingabe!\nBitte eine Zahl zwischen 1 und 5 eingeben.")
@@ -238,8 +244,11 @@ def auswahl_Menue(pw_liste, datenbank_datei_name):
         # Ändere einen Datensatz
         case 4:
             datensatz_aendern(pw_liste, int(input("\nBitte geben Sie den Index des zu ändernden Passwortes ein.\n")), datenbank_datei_name)
-        # Beenden
+        # DB Datei manuell überschreiben
         case 5:
+            Passwort_Datei_Schreiben(pw_liste, datenbank_datei_name)
+        # Beenden
+        case 6:
             sys.exit()
         
 def startbildschirm():
