@@ -96,10 +96,13 @@ def master_Passwort_pruefen():
         print("Zugangsdaten sind korrekt.")
         return pw
 
+# Soll die Umgebung des Passwortmanagers validieren.
 
-def einrichtung_pruefen():
+
+def einrichtung_pruefen(einstellungen):
     __master_datei = Path("./login.txt")
-    __passwort_datei = Path("./passwords.txt")
+    __passwort_datei = Path("./" + einstellungen["datenbank_datei"]+".enc")
+    print(__passwort_datei)
     if __master_datei.is_file() == False and __passwort_datei.is_file() == False:
         ersteinrichtung(pw_liste)
     elif __master_datei.is_file() and __passwort_datei.is_file() == False:
@@ -169,7 +172,26 @@ def Passwortliste_sortieren(pw_liste):
 
 
 def Datei_Lesen(pw_liste):
-    datei = base64.b64decode(open("./passwords.txt", "r", encoding="utf-8"))
+    # TODO: ENKODIERTE DATEI VORHER DEKODIEREN
+    pfad = Path("./" + einstellungen["datenbank_datei"] + ".enc")
+    if pfad.is_file() == True:
+        datei_kodiert = open(pfad, "r")
+        gesamt_kodiert = datei_kodiert.read()
+        gesamt_dekodiert = base64.b64decode(bytes(gesamt_kodiert, "utf-8"))
+        # Pfad zurücksetzen auf unkodierte Datei
+        pfad = Path("./" + einstellungen["datenbank_datei"])
+        datei_unkodiert = open(pfad, "w")
+        datei_unkodiert.write(str(gesamt_dekodiert))
+        datei_unkodiert.close()
+    else:
+        # leere Datei schreiben für Fehlertoleranz
+        pfad = Path("./" + einstellungen["datenbank_datei"])
+        datei = open(pfad, "w")
+        datei.write("")
+        datei.close()
+
+    # DEKODIERTE DATEI AB HIER NUTZEN
+    datei = open(pfad, "r", encoding="utf-8")
     Lines = datei.readlines()
     pw_attribute = []
     # die alte Liste leeren um Sie auf die Neu-Befüllung vorzubereiten.
@@ -177,6 +199,8 @@ def Datei_Lesen(pw_liste):
     for line in Lines:
         # Abfangen von Leerzeilen (Code verhielt sich unberechenbar)
         if len(line.strip()) != 0:
+            #print(base64.b64decode(line[:-1:]), "utf-8")
+            #print(base64.b64decode(bytes(str(line), "utf-8")))
             pw_attribute.clear()
             pw_attribute = line.split(":")
             pw = Passwort(pw_attribute[0], pw_attribute[1],
@@ -191,10 +215,32 @@ def Datei_Lesen(pw_liste):
 def Passwort_Datei_Schreiben(pw_liste, datenbank_datei_name: str):
     pfad: str = str("./" + datenbank_datei_name)
     datei = open(pfad, "w")
+    gesamt: str = ""
+    print(pfad)
+    print(datenbank_datei_name)
     for x in pw_liste:
-        schreiben = base64.b64encode(bytes(str(x), "utf-8"))
-        datei.write(str(schreiben) + "\n")
+        #schreiben = str(str(base64.b64encode(bytes(str(x), "utf-8"))) + "/n")
+        schreiben = str(x)
+        gesamt = gesamt + schreiben + "\n"
+    datei.write(gesamt)
     datei.close()
+    # Jetzt Datei mit B64 Codieren, ist mir inline nicht wirklich gelungen.
+    schreiben = ""
+    gesamt = ""
+    datei_unkodiert = open(pfad, "r")
+    datei_kodiert = open(pfad+".enc", "w")
+    Lines = datei_unkodiert.readlines()
+    for line in Lines:
+        if len(line.strip()) != 0:
+            schreiben = line
+            gesamt = gesamt + schreiben
+    # gesamt zu b64 bytecode codieren und dann zurück zu str um schreibfähig zu machen
+    gesamt = str(base64.b64encode(bytes(gesamt, "utf-8")))
+    datei_kodiert.write(gesamt)
+    datei_kodiert.close()
+    datei_unkodiert.close()
+    # Unkodierte Datei Löschen um Klartext von Daten zu vermeiden.
+    os.remove(pfad)
 
 # Soll die settings.cfg Einstellungsdatei speichern / überschreiben
 
@@ -303,7 +349,8 @@ def auswahl_Menue(pw_liste, datenbank_datei_name):
 
 def startbildschirm():
     settings_datei = "./settings.cfg"
-    einstellungen = einstellungen_laden()  # Dictionary initialisieren
+    # Dictionary initialisieren und andere Einstellungen laden.
+    einstellungen = einstellungen_laden()
     print("=====================")
     print("   Passwortmanager")
     print("=====================")
@@ -318,7 +365,7 @@ def startbildschirm():
             ersteinrichtung(pw_liste, einstellungen)
         case 2:
             print("Vorhandene Datenbank wird genutzt.")
-            einrichtung_pruefen()
+            einrichtung_pruefen(einstellungen)
         case 3:
             print("Programm wird beendet.")
             sys.exit()
