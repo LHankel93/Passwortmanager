@@ -74,7 +74,6 @@ def ersteinrichtung(pw_liste, einstellungen):
         "Bitte geben Sie den neuen Namen der Passwort-Datenbank an.\n")
     print(str("Neue Datenbank Dateiname: " + datenbank_datei_name))
     Einstellungen_Datei_Speichern(einstellungen)
-    print(einstellungen)
     # Neues Master Passwort anlegen
     master_Passwort_anlegen()
     # Passwort Liste mit Test-Daten füllen
@@ -101,7 +100,7 @@ def master_Passwort_pruefen():
 
 def einrichtung_pruefen(einstellungen):
     __master_datei = Path("./login.txt")
-    __passwort_datei = Path("./" + einstellungen["datenbank_datei"]+".enc")
+    __passwort_datei = Path("./" + einstellungen["datenbank_datei"])
     print(__passwort_datei)
     if __master_datei.is_file() == False and __passwort_datei.is_file() == False:
         ersteinrichtung(pw_liste)
@@ -172,24 +171,7 @@ def Passwortliste_sortieren(pw_liste):
 
 
 def Datei_Lesen(pw_liste):
-    # TODO: ENKODIERTE DATEI VORHER DEKODIEREN
-    pfad = Path("./" + einstellungen["datenbank_datei"] + ".enc")
-    if pfad.is_file() == True:
-        datei_kodiert = open(pfad, "r")
-        gesamt_kodiert = datei_kodiert.read()
-        gesamt_dekodiert = base64.b64decode(bytes(gesamt_kodiert, "utf-8"))
-        # Pfad zurücksetzen auf unkodierte Datei
-        pfad = Path("./" + einstellungen["datenbank_datei"])
-        datei_unkodiert = open(pfad, "w")
-        datei_unkodiert.write(str(gesamt_dekodiert))
-        datei_unkodiert.close()
-    else:
-        # leere Datei schreiben für Fehlertoleranz
-        pfad = Path("./" + einstellungen["datenbank_datei"])
-        datei = open(pfad, "w")
-        datei.write("")
-        datei.close()
-
+    pfad = Path("./" + einstellungen["datenbank_datei"])
     # DEKODIERTE DATEI AB HIER NUTZEN
     datei = open(pfad, "r", encoding="utf-8")
     Lines = datei.readlines()
@@ -199,8 +181,6 @@ def Datei_Lesen(pw_liste):
     for line in Lines:
         # Abfangen von Leerzeilen (Code verhielt sich unberechenbar)
         if len(line.strip()) != 0:
-            #print(base64.b64decode(line[:-1:]), "utf-8")
-            #print(base64.b64decode(bytes(str(line), "utf-8")))
             pw_attribute.clear()
             pw_attribute = line.split(":")
             pw = Passwort(pw_attribute[0], pw_attribute[1],
@@ -216,31 +196,11 @@ def Passwort_Datei_Schreiben(pw_liste, datenbank_datei_name: str):
     pfad: str = str("./" + datenbank_datei_name)
     datei = open(pfad, "w")
     gesamt: str = ""
-    print(pfad)
-    print(datenbank_datei_name)
     for x in pw_liste:
-        #schreiben = str(str(base64.b64encode(bytes(str(x), "utf-8"))) + "/n")
         schreiben = str(x)
         gesamt = gesamt + schreiben + "\n"
     datei.write(gesamt)
     datei.close()
-    # Jetzt Datei mit B64 Codieren, ist mir inline nicht wirklich gelungen.
-    schreiben = ""
-    gesamt = ""
-    datei_unkodiert = open(pfad, "r")
-    datei_kodiert = open(pfad+".enc", "w")
-    Lines = datei_unkodiert.readlines()
-    for line in Lines:
-        if len(line.strip()) != 0:
-            schreiben = line
-            gesamt = gesamt + schreiben
-    # gesamt zu b64 bytecode codieren und dann zurück zu str um schreibfähig zu machen
-    gesamt = str(base64.b64encode(bytes(gesamt, "utf-8")))
-    datei_kodiert.write(gesamt)
-    datei_kodiert.close()
-    datei_unkodiert.close()
-    # Unkodierte Datei Löschen um Klartext von Daten zu vermeiden.
-    os.remove(pfad)
 
 # Soll die settings.cfg Einstellungsdatei speichern / überschreiben
 
@@ -263,17 +223,17 @@ def Teste_Liste_erstellen():
 
 
 def Ausgabe_Pw_Liste(pw_liste):
-    print("-------------------------------------------------------------------------------------")
-    print("Index\tName\t\tPasswort\t\tURL\t\tHinweis")
-    print("-------------------------------------------------------------------------------------")
+    print("---------------------------------------------------------------------------------------------------------------------------------")
+    print("Index\t\tName\t\t\tPasswort\t\t\tURL\t\t\tHinweis")
+    print("---------------------------------------------------------------------------------------------------------------------------------")
     for i in pw_liste:
         index = Passwort.get_index(i)
         name = Passwort.get_name(i)
         passwort = Passwort.get_passwort(i)
         url = Passwort.get_url(i)
         hinweis = Passwort.get_hinweis(i)
-        print(str(index) + "\t" + str(name) + "\t\t" +
-              str(passwort) + "\t\t" + str(url) + "\t\t" + str(hinweis))
+        print(str(index) + "\t\t" + str(name) + "\t\t" +
+              str(passwort) + "\t\t\t" + str(url) + "\t\t" + str(hinweis))
 
 
 def finde_naechsten_index():
