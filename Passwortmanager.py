@@ -72,8 +72,12 @@ def ersteinrichtung(pw_liste, einstellungen):
     # Dateiname abfragen
     datenbank_datei_name: str = input(
         "Bitte geben Sie den neuen Namen der Passwort-Datenbank an.\n")
+    datenbank_datei_name = datenbank_datei_name + ".txt"
     print(str("Neue Datenbank Dateiname: " + datenbank_datei_name))
+    # Einstellung in Settings.cfg speichern
+    einstellungen["datenbank_datei"] = datenbank_datei_name
     Einstellungen_Datei_Speichern(einstellungen)
+    einstellungen_laden()
     # Neues Master Passwort anlegen
     master_Passwort_anlegen()
     # Passwort Liste mit Test-Daten füllen
@@ -101,9 +105,12 @@ def master_Passwort_pruefen():
 def einrichtung_pruefen(einstellungen):
     __master_datei = Path("./login.txt")
     __passwort_datei = Path("./" + einstellungen["datenbank_datei"])
-    print(__passwort_datei)
-    if __master_datei.is_file() == False and __passwort_datei.is_file() == False:
-        ersteinrichtung(pw_liste)
+    __settings_datei = Path("./settings.cfg")
+    if __master_datei.is_file() == False or __passwort_datei.is_file() == False or __settings_datei.is_file() == False:
+        print("----------------------------------------------------------------------------------------------------")
+        print("Es fehlen essentielle Dateien, der Manager wird neu eingerichtet")
+        print("----------------------------------------------------------------------------------------------------")
+        ersteinrichtung(pw_liste, einstellungen)
     elif __master_datei.is_file() and __passwort_datei.is_file() == False:
         print("\nMaster Login Datei fehlt. Setze Installation zurück.\n")
         os.remove("./login.txt")
@@ -121,7 +128,6 @@ def datensatz_loeschen(pw_liste, index_loeschen: int, datenbank_datei):
     listen_index: int = -1
     count: int = 0
     for i in pw_liste:
-        # print(str("\nAktueller Index zum Vergleich: " + Passwort.get_index(i)) + "\n")
         if int(Passwort.get_index(i)) == int(index_loeschen):
             print("\nFolgender DS wird gelöscht: " + str(index_loeschen) + "\n")
             listen_index = count
@@ -183,7 +189,8 @@ def Datei_Lesen(pw_liste):
         if len(line.strip()) != 0:
             pw_attribute.clear()
             pw_attribute = line.split(":")
-            pw = Passwort(pw_attribute[0], pw_attribute[1],
+            # INT UNBEDINGT PARSEN BEIM INDEX SONST WIRD SPÄTER TYPE ERROR GESCHMISSEN :<<<<<
+            pw = Passwort(int(pw_attribute[0]), pw_attribute[1],
                           pw_attribute[2], pw_attribute[3], pw_attribute[4])
             pw_liste.append(pw)
     pw_liste = Passwortliste_sortieren(pw_liste)
@@ -209,7 +216,7 @@ def Einstellungen_Datei_Speichern(einstellungen):
     pfad: str = str("./settings.cfg")  # Erstmal Standard Dateiname.
     datei = open(pfad, "w")
     for key, value in einstellungen.items():
-        print(key, value)
+        # print(key, value)
         datei.write(key + ":" + value)
     datei.close()
 
@@ -243,14 +250,21 @@ def finde_naechsten_index():
         index_list.append(Passwort.get_index(i))
     # Liste sortieren um Maximum zu finden
     index_list.sort()
+    # Prüfen ob index_list gefüllt ist, wenn nein, Standard Index 1 setzen.
     if not index_list:
         next_index = 1
     else:
         for z in index_list:
             if (int(z) + 1) not in index_list:
                 next_index: int = (int(z)+1)
+                break
             else:
                 next_index: int = int(index_list[-1]) + 1
+            if (int(z) - 1) > 0 and (int(z) - 1) not in index_list:
+                print("\n\n---------\nBANG!\n---------\n\n")
+                next_index = int(int(z) - int(1))
+                break
+    print("\nNächster Index: " + str(next_index))
     return next_index
 
 
@@ -278,7 +292,7 @@ def auswahl_Menue(pw_liste, datenbank_datei_name):
     print("3) Lösche ein Passwort")
     print("4) Aktualisiere Passwort")
     print("5) Alles Speichern")
-    print("6) Beende\n")
+    print("6) Beenden\n")
     auswahl: int = 0
     while auswahl < 1 or auswahl > 6:
         auswahl: int = int(input())
@@ -308,7 +322,7 @@ def auswahl_Menue(pw_liste, datenbank_datei_name):
 
 
 def startbildschirm():
-    settings_datei = "./settings.cfg"
+    # settings_datei = "./settings.cfg"
     # Dictionary initialisieren und andere Einstellungen laden.
     einstellungen = einstellungen_laden()
     print("=====================")
@@ -340,13 +354,12 @@ def einstellungen_laden():
     for line in Lines:
         if len(line.strip()) != 0:
             if line.split(":")[0] == "datenbank_datei":
-                # print(line.split(":"))
                 einstellungen["datenbank_datei"] = line.split(":")[1]
     return einstellungen
 
 # Oben Methoden / Funktionen
 # ------------------------------------------------------------------------------------------------------------------------
-# Unten Logik / Ablauf Planung
+# Unten Logik / Ablauf Planung / Main
 
 
 # Liste für Passwörter definieren
@@ -354,7 +367,7 @@ pw_liste = []
 einstellungen = einstellungen_laden()
 datenbank_datei_name = einstellungen['datenbank_datei']
 # Startbildschirm zeigen
-startbildschirm()  # zum Debuggen von PW Variable.
+startbildschirm()
 # Ausgabe der formatierten Daten aus der Passwort Datei.
 Ausgabe_Pw_Liste(pw_liste)
 # Hauptschleife
