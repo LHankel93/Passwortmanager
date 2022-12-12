@@ -160,4 +160,7 @@ passwords.txt
 
 # Login Datei
 login.txt
+
+# Gource output datei & Video
+output.ppm
 out.mp4

@@ -1,0 +1,17 @@
+gource -1920x1080 -stop-position 1.0 --auto-skip-seconds 0.5 --max-file-lag 0.1 --title "Lorenz Hankel WPF Python Montag Passwortmanager" --highlight-all-users --bloom-multiplier 0.4 --bloom-intensity 0.6 --highlight-all-users --hide mouse -seconds-per-day 1.5 --output-framerate 60 --output-ppm-stream output.ppm
+ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i output.ppm -r 60 -c:v hevc_amf -level 4.1 -crf 21 -preset veryslow out.mp4
+del output.ppm
+
+
+gource -1920x1080 -stop-position 1.0 --highlight-all-users --hide-filenames --seconds-per-day 2 --output-framerate 120 --output-ppm-stream output.ppm 
+
+ffmpeg -y -r 60 -f image2pipe -vcodec ppm -i output.ppm -r 60 -vcodec h264 -preset slow -tune animation -crf 8 -threads 0 -q:a 0 out.mp4
+
+vcodec=hevc_amf alternativ für h.265
+h264_amf = h264
+hevc_amf = libx265
+
+
+Für NVENC
+
+ffmpeg -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda -i output.ppm -c:a copy -c:v h264_nvenc -b:v 5M output.mp4
